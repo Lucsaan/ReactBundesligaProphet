@@ -1,0 +1,3 @@
+rootProject.name = 'BundesligaProphet'
+
+include ':app'
