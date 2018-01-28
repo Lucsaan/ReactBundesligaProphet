@@ -9,7 +9,10 @@ import {
   Platform,
   StyleSheet,
   Text,
-  View
+  View,
+    ToolbarAndroid,
+    DrawerLayoutAndroid,
+    TouchableHighlight
 } from 'react-native';
 import { Header } from 'react-native-elements';
 
@@ -20,28 +23,49 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
-export default class App extends Component<{}> {
-  render() {
-    return (
-      <View>
-          <Header
-              leftComponent={{ icon: 'menu', color: '#fff' }}
-              centerComponent={{ text: 'BundesligaProphet', style: { color: '#fff' } }}
-              rightComponent={{ icon: 'home', color: '#fff' }}
-              backgroundcolor='#000'
-          />
-        <Text style={styles.welcome}>
-          Moin! Hello World! Was geht und was soll das alles
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit App.js
-        </Text>
-        <Text style={styles.instructions}>
-          {instructions}
-        </Text>
-      </View>
 
-    );
+
+export default class App extends Component<{}> {
+
+    constructor(){
+        super();
+
+        this.openDrawer = this.openDrawer.bind(this);
+    }
+
+    openDrawer() {
+        console.log('Geht was');
+        this.drawer.openDrawer();
+    }
+
+  render() {
+
+      const navigationView = (
+          <View style={{flex: 1, backgroundColor: '#fff'}}>
+              <Text style={{margin: 10, fontSize: 15, textAlign: 'left'}}>I'm in the Drawer!</Text>
+          </View>
+      );
+
+      return (
+          <DrawerLayoutAndroid
+              drawerWidth={300}
+              ref={(_drawer) => this.drawer = _drawer}
+              drawerPosition={DrawerLayoutAndroid.positions.Left}
+              renderNavigationView={() => navigationView}>
+              <View>
+                  <Header
+                      leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.openDrawer(), }}
+                      centerComponent={{ text: 'BundesligaProphet', style: { color: '#fff' } }}
+                      rightComponent={{ icon: 'home', color: '#fff' }}
+                      backgroundColor={'#000'}
+                  />
+                  <Text style={styles.welcome}>
+                      Hier kommt die View hin
+                  </Text>
+              </View>
+          </DrawerLayoutAndroid>
+      );
+
   }
 }
 
