@@ -11,6 +11,7 @@ import {
   Text,
   View
 } from 'react-native';
+import { Header } from 'react-native-elements';
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -22,7 +23,13 @@ const instructions = Platform.select({
 export default class App extends Component<{}> {
   render() {
     return (
-      <View style={styles.container}>
+      <View>
+          <Header
+              leftComponent={{ icon: 'menu', color: '#fff' }}
+              centerComponent={{ text: 'BundesligaProphet', style: { color: '#fff' } }}
+              rightComponent={{ icon: 'home', color: '#fff' }}
+              backgroundcolor='#000'
+          />
         <Text style={styles.welcome}>
           Moin! Hello World! Was geht und was soll das alles
         </Text>
@@ -33,6 +40,7 @@ export default class App extends Component<{}> {
           {instructions}
         </Text>
       </View>
+
     );
   }
 }
