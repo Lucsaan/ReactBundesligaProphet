@@ -10,12 +10,14 @@ import {
     StyleSheet,
     Text,
     View,
+    Image,
     ToolbarAndroid,
     DrawerLayoutAndroid,
-    TouchableHighlight, FlatList, ScrollView
+    TouchableHighlight, FlatList, ScrollView, TextInput
 } from 'react-native';
-import { Header } from 'react-native-elements';
+import { Header, Card } from 'react-native-elements';
 import Button from "react-native-elements/src/buttons/Button";
+
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -24,7 +26,6 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
-let gamesList: any;
 
 export default class App extends Component<{}> {
 
@@ -35,6 +36,8 @@ export default class App extends Component<{}> {
 
         this.state = {
             games: 'Moin',
+            suchText: '',
+            gamesList: <Text>Noch keine Daten</Text>
         }
 
     }
@@ -60,21 +63,10 @@ export default class App extends Component<{}> {
                     games: JSON.parse(http.response)
                 });
 
-                this.gamesList = this.state.games.map((game) => {
-                    if (game.Location !== null) {
-                        return <Text key={game.MatchID}>{game.Location.LocationCity}</Text>
-                    }
-                });
+                this.setState({
+                    gamesList: this.renderGamesList()
+                })
 
-                console.log(this.state.games);
-                console.log(this.state.games.length + " Daten erhalten");
-                for(let game of this.state.games){
-                    if(game.Location !== null){
-                        if(game.Location.LocationCity === 'Freiburg'){
-                            console.log(game);
-                        }
-                    }
-                }
             }
         }.bind(this);
 
@@ -82,13 +74,31 @@ export default class App extends Component<{}> {
         http.send();
     }
 
+    renderGamesList() {
+        let gamesList = this.state.games.map((game, i ) => {
+            if (game.Location !== null) {
+                if(game.Team1.TeamName.toLowerCase().includes(this.state.suchText.toLowerCase())){
+                    return <View key={game.MatchID} style={styles.Ergebnisse}>
+                        <Text><Image source={{uri: game.Team1.TeamIconUrl}} style={styles.icon}/><Text style={styles.Mannschaft}>{game.Team1.TeamName}</Text><Text style={styles.Ergebnis}>{game.MatchResults[1].PointsTeam1}</Text></Text>
+                        <Text><Image source={{uri: game.Team2.TeamIconUrl}} style={styles.icon}/><Text style={styles.Mannschaft}>{game.Team2.TeamName}</Text><Text style={styles.Ergebnis}>{game.MatchResults[1].PointsTeam2}</Text></Text>
+                    </View>
+
+                }
+            }
+
+        });
+
+        return gamesList;
+    }
+
   render() {
 
       const navigationView = (
-          <View style={{flex: 1, backgroundColor: '#fff'}}>
+          <View style={{flexDirection:'row', flexWrap:'wrap', backgroundColor: '#fff'}}>
               <Text style={{margin: 10, fontSize: 15, textAlign: 'left'}}>I'm in the Drawer!</Text>
           </View>
       );
+
 
       return (
           <DrawerLayoutAndroid
@@ -103,16 +113,26 @@ export default class App extends Component<{}> {
                       rightComponent={{ icon: 'home', color: '#fff' }}
                       backgroundColor={'#000'}
                   />
-                  <Text style={styles.welcome}>
-                      Hier kommt die View hin
-                  </Text>
+                  <TextInput
+                      placeholder="Suche Verein"
+                      style={styles.welcome}
+                      onChangeText={(text) => {
+                          this.setState({suchText: text});
+                          this.setState({
+                              gamesList: this.renderGamesList()
+                          })
+                      }}
+                  />
+                  <Text>{this.state.suchText}</Text>
                   <TouchableHighlight onPress={() => this.httpRequest()} underlayColor="white">
                       <View style={styles.button}>
                           <Text style={styles.buttonText}>TouchableHighlight</Text>
                       </View>
                   </TouchableHighlight>
                  <ScrollView>
-                     {this.gamesList}
+                     <Card title={"Hallo Bundesliga"} >
+                        {this.state.gamesList}
+                     </Card>
                  </ScrollView>
 
               </View>
@@ -148,5 +168,21 @@ const styles = StyleSheet.create({
     buttonText: {
         padding: 20,
         color: 'white'
+    },
+    icon: {
+        width: 40,
+        height: 40,
+        paddingRight: 20,
+    },
+    Mannschaft: {
+        width: '100%',
+        letterSpacing:2,
+    },
+    Ergebnis: {
+      fontSize: 20,
+    },
+    Ergebnisse: {
+      paddingBottom: 20,
     }
+
 });
