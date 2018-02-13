@@ -31,20 +31,16 @@ export default class App extends Component<{}> {
 
     constructor(){
         super();
-        this.openDrawer = this.openDrawer.bind(this);
         this.httpRequest = this.httpRequest.bind(this);
 
         this.state = {
-            games: 'Moin',
+            games: {},
             suchText: '',
-            gamesList: <Text>Noch keine Daten</Text>
+            gamesList: {}
         }
 
-    }
+        this.httpRequest();
 
-    openDrawer() {
-        console.log('Geht was');
-        this.drawer.openDrawer();
     }
 
     httpRequest(){
@@ -64,7 +60,7 @@ export default class App extends Component<{}> {
                 });
 
                 this.setState({
-                    gamesList: this.renderGamesList()
+                    gamesList: JSON.parse(http.response)
                 })
 
             }
@@ -74,80 +70,126 @@ export default class App extends Component<{}> {
         http.send();
     }
 
-    renderGamesList() {
-        let gamesList = this.state.games.map((game, i ) => {
-            if (game.Location !== null) {
-                if(game.Team1.TeamName.toLowerCase().includes(this.state.suchText.toLowerCase())){
-                    return <View key={game.MatchID} style={styles.Ergebnisse}>
-                        <Text><Image source={{uri: game.Team1.TeamIconUrl}} style={styles.icon}/><Text style={styles.Mannschaft}>{game.Team1.TeamName}</Text><Text style={styles.Ergebnis}>{game.MatchResults[1].PointsTeam1}</Text></Text>
-                        <Text><Image source={{uri: game.Team2.TeamIconUrl}} style={styles.icon}/><Text style={styles.Mannschaft}>{game.Team2.TeamName}</Text><Text style={styles.Ergebnis}>{game.MatchResults[1].PointsTeam2}</Text></Text>
-                    </View>
-
-                }
-            }
-
-        });
-
-        return gamesList;
+    measureView(event) {
+        this.cardHeight = event.nativeEvent.layout.height;
     }
+
+    scrollToItem = () => {
+        let done = false;
+        this.state.gamesList.map((game, i) => {
+            if (game.MatchResults[1] === undefined && done === false){
+                this.flatListRef.scrollToIndex({animated: true, index: i});
+                done = true;
+            }
+        })
+    }
+
+    prepareGamesList = () => {
+        let gamesList = [];
+        this.state.games.map((game) => {
+            if(game.MatchResults[1] === undefined){
+                gamesList.push(game);
+            }
+        })
+        this.setState({
+            gamesList: gamesList
+        })
+    }
+    getItemLayout = (data, index) => (
+        { length: this.cardHeight, offset: this.cardHeight * index, index }
+    )
 
   render() {
 
-      const navigationView = (
-          <View style={{flexDirection:'row', flexWrap:'wrap', backgroundColor: '#fff'}}>
-              <Text style={{margin: 10, fontSize: 15, textAlign: 'left'}}>I'm in the Drawer!</Text>
-          </View>
-      );
-
-
       return (
-          <DrawerLayoutAndroid
-              drawerWidth={300}
-              ref={(_drawer) => this.drawer = _drawer}
-              drawerPosition={DrawerLayoutAndroid.positions.Left}
-              renderNavigationView={() => navigationView}>
-              <View>
+              <View >
                   <Header
-                      leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.openDrawer(), }}
+                      leftComponent={{ icon: 'menu', color: '#fff', }}
                       centerComponent={{ text: 'BundesligaProphet', style: { color: '#fff' } }}
                       rightComponent={{ icon: 'home', color: '#fff' }}
                       backgroundColor={'#000'}
                   />
+                  <TouchableHighlight onPress={this.scrollToItem} underlayColor="white">
+                      <View style={styles.button}>
+                          <Text style={styles.buttonText}>Gehe zu aktuellem Spiel</Text>
+                      </View>
+                  </TouchableHighlight>
                   <TextInput
                       placeholder="Suche Verein"
                       style={styles.welcome}
                       onChangeText={(text) => {
-                          this.setState({suchText: text});
                           this.setState({
-                              gamesList: this.renderGamesList()
+                              suchText: text,
+                              gamesList: this.renderGamesList(text)
                           })
                       }}
                   />
-                  <Text>{this.state.suchText}</Text>
-                  <TouchableHighlight onPress={() => this.httpRequest()} underlayColor="white">
-                      <View style={styles.button}>
-                          <Text style={styles.buttonText}>TouchableHighlight</Text>
-                      </View>
-                  </TouchableHighlight>
-                 <ScrollView>
-                     <Card title={"Hallo Bundesliga"} >
-                        {this.state.gamesList}
-                     </Card>
-                 </ScrollView>
-
+                 <FlatList
+                     style={{marginBottom: 200}}
+                    data={this.state.gamesList}
+                    ref={(ref) => { this.flatListRef = ref; }}
+                    getItemLayout={this.getItemLayout}
+                    keyExtractor={item => item.MatchID}
+                    renderItem={ ({item}) => {
+                        return(
+                        <View onLayout={(event) => this.measureView(event)}>
+                            <Card
+                                containerStyle={{margin: 0, paddingBottom: 2, paddingTop: 2}}
+                            >
+                                {this.formatDate(new Date(item.MatchDateTime))}
+                                <View style={styles.resultContainer}>
+                                    <Image source={{uri: item.Team1.TeamIconUrl}} style={styles.icon}/>
+                                    <Text style={styles.teamName}>{item.Team1.TeamName}</Text>
+                                    <Text style={styles.result}>{item.MatchResults[1] !== undefined ? item.MatchResults[1].PointsTeam1 : '-'}</Text>
+                                </View>
+                                <View style={styles.resultContainer}>
+                                    <Image source={{uri: item.Team2.TeamIconUrl}} style={styles.icon}/>
+                                    <Text style={styles.teamName}>{item.Team2.TeamName}</Text>
+                                    <Text style={styles.result}>{item.MatchResults[1] !== undefined ? item.MatchResults[1].PointsTeam2 : '-'}</Text>
+                                </View>
+                            </Card>
+                        </View>
+                        )
+                    }
+                    }
+                 />
               </View>
-          </DrawerLayoutAndroid>
       );
 
   }
+
+    formatDate(date){
+            return(
+                <Text>
+                    {date.getDate() + '.' + (date.getMonth() + 1) + '.'  + date.getFullYear()}
+                </Text>
+            );
+    }
+
+    renderGamesList(text) {
+        if(text.length < 1){
+            return this.state.games;
+        }
+        let gamesList = [];
+        this.state.games.map((game, i ) => {
+                if(
+                    game.Team1.TeamName.toLowerCase().indexOf(text.toLowerCase()) !== -1  ||
+                    game.Team2.TeamName.toLowerCase().indexOf(text.toLowerCase()) !== -1
+                ){
+                    gamesList.push(game);
+            }
+        });
+        return gamesList;
+    }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+  alles: {
+    width: '100%',
+  },
+  border: {
+    borderBottomWidth: 100,
+      borderBottomColor: 'black'
   },
   welcome: {
     fontSize: 20,
@@ -160,7 +202,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
     button: {
-        marginBottom: 30,
         width: '100%',
         alignItems: 'center',
         backgroundColor: '#2196F3'
@@ -170,19 +211,23 @@ const styles = StyleSheet.create({
         color: 'white'
     },
     icon: {
-        width: 40,
-        height: 40,
-        paddingRight: 20,
+      width: 25,
+        height: 25,
     },
-    Mannschaft: {
-        width: '100%',
-        letterSpacing:2,
+    teamName: {
+        fontSize: 20,
     },
-    Ergebnis: {
-      fontSize: 20,
+    result: {
+      fontSize: 25,
+        color: 'black',
+        textAlign: 'right'
     },
-    Ergebnisse: {
-      paddingBottom: 20,
+    resultContainer: {
+      width: '100%',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'space-between'
     }
 
 });
