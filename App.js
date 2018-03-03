@@ -23,6 +23,8 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
+const db = new PouchDB('games');
+
 export default class App extends Component<> {
 
     constructor(){
@@ -31,14 +33,17 @@ export default class App extends Component<> {
         this.setDatabase = this.setDatabase.bind(this);
         this.saveGames = this.saveGames.bind(this);
 
+        PouchDB.debug.enable('*');
+
         this.state = {
             games: {},
             suchText: '',
-            gamesList: {},
-            db: new PouchDB('games')
+            gamesList: {}
         }
 
+
         this.getNumberOfRows().then( (result) => {
+            console.log(result);
                if (result.total_rows < 1){
                    console.log('Hols aus der Internet');
                    this.httpRequest();
@@ -52,8 +57,9 @@ export default class App extends Component<> {
     }
 
     saveGames(){
+        console.log('saveGames');
         this.state.games.map((game) => {
-            this.state.db.put({
+            db.put({
                 _id: game.MatchID.toString(),
                 game: game
             }).then( (response) => {
@@ -83,11 +89,13 @@ export default class App extends Component<> {
     };
 
     getNumberOfRows = () => {
-        return this.state.db.allDocs({include_docs: true, descending: false});
+        console.log('getNumberOfRows');
+        return db.allDocs({include_docs: true, descending: false});
     };
 
     deleteGames = () => {
-        this.state.db.destroy().then(function (response) {
+        console.log('destroy Database');
+        db.destroy().then(function (response) {
             console.log(response);
         }).catch(function (err) {
             console.log(err);
@@ -161,13 +169,13 @@ export default class App extends Component<> {
                       backgroundColor={'#000'}
                   />
                   <View
-                    style={{flexDirection: 'row', alignItems: 'center'}}
+                    style={{flexDirection: 'row', alignItems: 'center', backgroundColor:'white'}}
                   >
                       <SearchBar
                           round
                           clearIcon
                           lightTheme
-                          containerStyle={{backgroundColor: '#f6fcff', width: '85%'}}
+                          containerStyle={{backgroundColor: 'white', width: '85%'}}
                           placeholder="Suche Verein"
                           onChangeText={(text) => {
                               this.setState({
@@ -179,7 +187,7 @@ export default class App extends Component<> {
                               this.setState({suchText: ''});
                           }}
                       />
-                      <TouchableHighlight onPress={this.scrollToItem} underlayColor='#b5bec8'>
+                      <TouchableHighlight onPress={this.scrollToItem} underlayColor='#b5bec8' style={{backgroundColor: 'white'}}>
                           <View >
                               <Text>Aktuell</Text>
                           </View>
@@ -195,7 +203,7 @@ export default class App extends Component<> {
                         return(
                         <View onLayout={(event) => this.measureView(event)}>
                             <Card
-                                containerStyle={{margin: 0, paddingBottom: 2, paddingTop: 2, backgroundColor: '#eee'}}
+                                containerStyle={{margin: 0, paddingBottom: 2, paddingTop: 2}}
                             >
                                 {this.formatDate(new Date(item.MatchDateTime))}
                                 <View style={styles.resultContainer}>
