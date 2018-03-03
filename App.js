@@ -11,13 +11,10 @@ import {
     Text,
     View,
     Image,
-    ToolbarAndroid,
-    DrawerLayoutAndroid,
     TouchableHighlight, FlatList, ScrollView, TextInput
 } from 'react-native';
-import { Header, Card } from 'react-native-elements';
-import Button from "react-native-elements/src/buttons/Button";
-
+import { Header, Card, SearchBar } from 'react-native-elements';
+import PouchDB from 'pouchdb-react-native';
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -26,22 +23,76 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
-
-export default class App extends Component<{}> {
+export default class App extends Component<> {
 
     constructor(){
         super();
         this.httpRequest = this.httpRequest.bind(this);
+        this.setDatabase = this.setDatabase.bind(this);
+        this.saveGames = this.saveGames.bind(this);
 
         this.state = {
             games: {},
             suchText: '',
-            gamesList: {}
+            gamesList: {},
+            db: new PouchDB('games')
         }
 
-        this.httpRequest();
-
+        this.getNumberOfRows().then( (result) => {
+               if (result.total_rows < 1){
+                   console.log('Hols aus der Internet');
+                   this.httpRequest();
+               } else {
+                   this.prepareGames(result);
+                   console.log('Hols aus der Datenbank');
+               }
+            }).catch( (error) => {
+                console.log(error);
+            });
     }
+
+    saveGames(){
+        this.state.games.map((game) => {
+            this.state.db.put({
+                _id: game.MatchID.toString(),
+                game: game
+            }).then( (response) => {
+                console.log(response);
+            }).catch( (error) => {
+                console.log(error);
+            });
+        });
+    }
+
+    setDatabase(){
+        // db.remove(games[0], (response) => {
+        //     console.log(response)
+        // })
+    }
+
+    prepareGames = (result) => {
+        console.log(result);
+        let games = [];
+        result.rows.map( (row) => {
+            games.push(row.doc.game);
+            this.setState({
+                games: games,
+                gamesList: games
+            })
+        })
+    };
+
+    getNumberOfRows = () => {
+        return this.state.db.allDocs({include_docs: true, descending: false});
+    };
+
+    deleteGames = () => {
+        this.state.db.destroy().then(function (response) {
+            console.log(response);
+        }).catch(function (err) {
+            console.log(err);
+        });
+    };
 
     httpRequest(){
         console.log('Hole Daten');
@@ -56,12 +107,12 @@ export default class App extends Component<{}> {
                 }
                 console.log('Verarbeite Daten');
                 this.setState({
-                    games: JSON.parse(http.response)
+                    games: JSON.parse(http.response),
+                    gamesList: JSON.parse(http.response)
+
                 });
 
-                this.setState({
-                    gamesList: JSON.parse(http.response)
-                })
+                this.saveGames();
 
             }
         }.bind(this);
@@ -102,30 +153,40 @@ export default class App extends Component<{}> {
   render() {
 
       return (
-              <View >
+              <View style={{display: 'flex'}} >
                   <Header
                       leftComponent={{ icon: 'menu', color: '#fff', }}
                       centerComponent={{ text: 'BundesligaProphet', style: { color: '#fff' } }}
-                      rightComponent={{ icon: 'home', color: '#fff' }}
+                      rightComponent={{ icon: 'home', color: '#fff', onPress: () => this.handleButtonPress()}}
                       backgroundColor={'#000'}
                   />
-                  <TouchableHighlight onPress={this.scrollToItem} underlayColor="white">
-                      <View style={styles.button}>
-                          <Text style={styles.buttonText}>Gehe zu aktuellem Spiel</Text>
-                      </View>
-                  </TouchableHighlight>
-                  <TextInput
-                      placeholder="Suche Verein"
-                      style={styles.welcome}
-                      onChangeText={(text) => {
-                          this.setState({
-                              suchText: text,
-                              gamesList: this.renderGamesList(text)
-                          })
-                      }}
-                  />
+                  <View
+                    style={{flexDirection: 'row', alignItems: 'center'}}
+                  >
+                      <SearchBar
+                          round
+                          clearIcon
+                          lightTheme
+                          containerStyle={{backgroundColor: '#f6fcff', width: '85%'}}
+                          placeholder="Suche Verein"
+                          onChangeText={(text) => {
+                              this.setState({
+                                  suchText: text,
+                                  gamesList: this.renderGamesList(text)
+                              })
+                          }}
+                          onClearText={() => {
+                              this.setState({suchText: ''});
+                          }}
+                      />
+                      <TouchableHighlight onPress={this.scrollToItem} underlayColor='#b5bec8'>
+                          <View >
+                              <Text>Aktuell</Text>
+                          </View>
+                      </TouchableHighlight>
+                  </View>
                  <FlatList
-                     style={{marginBottom: 200}}
+                     style={{marginBottom: 130}}
                     data={this.state.gamesList}
                     ref={(ref) => { this.flatListRef = ref; }}
                     getItemLayout={this.getItemLayout}
@@ -134,7 +195,7 @@ export default class App extends Component<{}> {
                         return(
                         <View onLayout={(event) => this.measureView(event)}>
                             <Card
-                                containerStyle={{margin: 0, paddingBottom: 2, paddingTop: 2}}
+                                containerStyle={{margin: 0, paddingBottom: 2, paddingTop: 2, backgroundColor: '#eee'}}
                             >
                                 {this.formatDate(new Date(item.MatchDateTime))}
                                 <View style={styles.resultContainer}>
@@ -157,6 +218,13 @@ export default class App extends Component<{}> {
       );
 
   }
+    handleButtonPress(){
+        this.deleteGames();
+        this.setState({
+            gamesList: null
+        })
+        this.httpRequest();
+    }
 
     formatDate(date){
             return(
@@ -203,8 +271,8 @@ const styles = StyleSheet.create({
   },
     button: {
         width: '100%',
-        alignItems: 'center',
-        backgroundColor: '#2196F3'
+        backgroundColor: 'black',
+        height: 40
     },
     buttonText: {
         padding: 20,
