@@ -44,7 +44,7 @@ export default class App extends Component<> {
 
         this.getNumberOfRows().then( (result) => {
             console.log(result);
-               if (result.total_rows < 1){
+               if (result.rows.length < 1){
                    console.log('Hols aus der Internet');
                    this.httpRequest();
                } else {
