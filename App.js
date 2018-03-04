@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Header, Card, SearchBar } from 'react-native-elements';
 import PouchDB from 'pouchdb-react-native';
+import Api from './src/Api';
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -24,12 +25,13 @@ const instructions = Platform.select({
 });
 
 const db = new PouchDB('games');
+const api = new Api();
 
 export default class App extends Component<> {
 
     constructor(){
         super();
-        this.httpRequest = this.httpRequest.bind(this);
+        this.getData = this.getData.bind(this);
         this.setDatabase = this.setDatabase.bind(this);
         this.saveGames = this.saveGames.bind(this);
 
@@ -46,7 +48,7 @@ export default class App extends Component<> {
             console.log(result);
                if (result.rows.length < 1){
                    console.log('Hols aus der Internet');
-                   this.httpRequest();
+                   this.getData();
                } else {
                    this.prepareGames(result);
                    console.log('Hols aus der Datenbank');
@@ -102,31 +104,17 @@ export default class App extends Component<> {
         });
     };
 
-    httpRequest(){
-        console.log('Hole Daten');
-        let url = "https://www.openligadb.de/api/getmatchdata/bl1/2017";
-        let http = new XMLHttpRequest();
+    getData(){
+        api.httpRequest().then(response => {
+            console.log('Verarbeite Daten');
+            this.setState({
+                games: JSON.parse(response),
+                gamesList: JSON.parse(response)
 
-        http.onreadystatechange = function () {
-            if(http.readyState === 4){
-                if(http.status !== 200){
-                    console.log(http.response);
-                    return;
-                }
-                console.log('Verarbeite Daten');
-                this.setState({
-                    games: JSON.parse(http.response),
-                    gamesList: JSON.parse(http.response)
+            });
 
-                });
-
-                this.saveGames();
-
-            }
-        }.bind(this);
-
-        http.open("GET", url, true);
-        http.send();
+            this.saveGames();
+        })
     }
 
     measureView(event) {
@@ -231,7 +219,7 @@ export default class App extends Component<> {
         this.setState({
             gamesList: null
         })
-        this.httpRequest();
+        this.getData();
     }
 
     formatDate(date){
