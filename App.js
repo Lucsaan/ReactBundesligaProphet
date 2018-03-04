@@ -81,10 +81,10 @@ export default class App extends Component<> {
         let games = [];
         result.rows.map( (row) => {
             games.push(row.doc.game);
-            this.setState({
-                games: games,
-                gamesList: games
-            })
+        })
+        this.setState({
+            games: games,
+            gamesList: games
         })
     };
 
