@@ -42,6 +42,7 @@ export default class App extends Component<> {
             games: {},
             suchText: '',
             gamesList: {},
+            staticGamesList: {},
             cardHeight: 0,
         }
     }
@@ -89,17 +90,9 @@ export default class App extends Component<> {
     prepareGames = (result) => {
         this.setState({
             games: result,
-            gamesList: result.rows[0].doc[2017]
+            gamesList: result.rows[0].doc[2017],
+            staticGamesList: result.rows[0].doc[2017],
         });
-
-        let games = [];
-        // result.rows.map( (row) => {
-        //     games.push(row.doc.year);
-        // })
-        // this.setState({
-        //     games: games,
-        //     gamesList: games
-        // })
     };
 
     getNumberOfRows = () => {
@@ -201,7 +194,7 @@ export default class App extends Component<> {
                               })
                           }}
                           onClearText={() => {
-                              this.setState({suchText: ''});
+                              this.setState({gamesList: this.state.staticGamesList});
                           }}
                       />
                       <TouchableHighlight onPress={this.scrollToItem} underlayColor='#b5bec8' style={{backgroundColor: 'white'}}>
@@ -265,10 +258,10 @@ export default class App extends Component<> {
 
     renderGamesList(text) {
         if(text.length < 1){
-            return this.state.gamesList;
+            return this.state.staticGamesList;
         }
         let gamesList = [];
-        this.state.gamesList.map((game, i ) => {
+        this.state.staticGamesList.map((game, i ) => {
                 if(
                     game.Team1.TeamName.toLowerCase().indexOf(text.toLowerCase()) !== -1  ||
                     game.Team2.TeamName.toLowerCase().indexOf(text.toLowerCase()) !== -1
