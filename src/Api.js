@@ -1,9 +1,9 @@
 export default class Api {
 
-    httpRequest(){
+    httpRequest(year){
         return new Promise ( (resolve, reject) => {
             console.log('Hole Daten');
-            let url = "https://www.openligadb.de/api/getmatchdata/bl1/2017";
+            let url = "https://www.openligadb.de/api/getmatchdata/bl1/" + year;
             let http = new XMLHttpRequest();
 
             http.onreadystatechange = function () {
