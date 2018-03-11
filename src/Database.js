@@ -9,6 +9,7 @@ export default class Database {
     }
 
     getData() {
+        console.log('Datenbank -> getData()');
         return db.allDocs({include_docs: true, descending: false});
     }
 

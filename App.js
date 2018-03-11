@@ -52,30 +52,34 @@ export default class App extends Component<> {
     }
 
     init(){
+        console.log('Initialisierung');
         gamesDb.getData().then(result => {
             console.log(result);
             if (result.rows.length < 1){
-                console.log('Hols aus der Internet');
-                api.httpRequest('2017').then(result => {
-                    gamesDb.saveYear(JSON.parse(result), '2017').then((result) => {
-                        if(result.ok) {
-                            gamesDb.getData().then(result => {
-                                this.prepareGames(result);
-                            }).catch(error => {
-                                console.log(error);
-                            })
-                        }
-                    }).catch(error => {
-                        console.log(error);
-                    });
-                }).catch(error => {
-                    console.log(error);
-                })
+                this.getDataFromApi();
             } else {
                 this.prepareGames(result);
                 console.log('Hols aus der Datenbank');
             }
+        })
+    }
 
+    getDataFromApi() {
+        console.log('Hols aus der Internet');
+        api.httpRequest('2017').then(result => {
+            gamesDb.saveYear(JSON.parse(result), '2017').then((result) => {
+                if(result.ok) {
+                    gamesDb.getData().then(result => {
+                        this.prepareGames(result);
+                    }).catch(error => {
+                        console.log(error);
+                    })
+                }
+            }).catch(error => {
+                console.log(error);
+            });
+        }).catch(error => {
+            console.log(error);
         })
     }
 
@@ -106,7 +110,6 @@ export default class App extends Component<> {
         console.log(this.state.games.rows.length);
         return new Promise((resolve, reject) => {
             this.state.games.rows.map(row => {
-                console.log(row);
                 gamesDb.deleteDoc(row.doc).then(result => {
                     console.log(result);
                     if(result.ok){
@@ -241,9 +244,10 @@ export default class App extends Component<> {
         console.log(this.state.games);
         this.setState({gamesList: {}});
         this.deleteAllGames().then(result => {
+            console.log('Daten gelöscht');
             if(result) {
                 console.log('Hole neue Daten');
-                this.init();
+                this.getDataFromApi();
             }
         })
     }
